@@ -1,0 +1,32 @@
+{
+  "name": "kiichain-microlending",
+  "version": "1.0.0",
+  "description": "KiiChain Micro Lending dApp — Week 2 Builder Series. A decentralized micro lending smart contract on KiiChain Testnet Oro.",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx serve . -p 3000",
+    "start": "npx serve . -p 3000",
+    "deploy": "vercel --prod"
+  },
+  "keywords": [
+    "kiichain",
+    "web3",
+    "defi",
+    "lending",
+    "ethereum",
+    "ethersjs",
+    "metamask",
+    "blockchain",
+    "payfi",
+    "testnet"
+  ],
+  "author": "Kbin",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.0",
+    "vercel": "^33.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

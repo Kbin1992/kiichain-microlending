@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>KiiChain Micro Lending — Testnet Oro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Syne:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js" type="application/javascript"></script>
+<style>
+:root {
+  --kii-black: #05030f;
+  --kii-deep: #0a0520;
+  --kii-purple: #7c3aed;
+  --kii-violet: #9b5cf6;
+  --kii-neon: #a855f7;
+  --kii-glow: #c084fc;
+  --kii-gold: #f59e0b;
+  --kii-cyan: #22d3ee;
+  --kii-white: #f0e8ff;
+  --kii-muted: rgba(168,139,250,0.45);
+  --glass: rgba(124,58,237,0.08);
+  --glass-border: rgba(168,139,250,0.18);
+  --glass-hover: rgba(124,58,237,0.15);
+  --font-display: 'Orbitron', monospace;
+  --font-body: 'Syne', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--kii-black);
+  color: var(--kii-white);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ─── CANVAS PARTICLES ─── */
+#particle-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+/* ─── GRID OVERLAY ─── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(124,58,237,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,58,237,0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── NAV ─── */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(5,3,15,0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  transition: all 0.3s;
+}
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  text-decoration: none;
+}
+.nav-logo-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--kii-purple), var(--kii-neon));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 0.9rem;
+  color: white;
+  box-shadow: 0 0 16px rgba(168,85,247,0.5);
+}
+.nav-logo-text {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--kii-white);
+  letter-spacing: 0.05em;
+}
+.nav-logo-text span { color: var(--kii-neon); }
+.nav-links { display: flex; align-items: center; gap: 2rem; }
+.nav-links a {
+  color: var(--kii-muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--kii-glow); }
+.nav-wallet-btn {
+  background: linear-gradient(135deg, var(--kii-purple), var(--kii-neon));
+  border: none;
+  color: white;
+  padding: 0.55rem 1.25rem;
+  border-radius: 10px;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 0 20px rgba(168,85,247,0.3);
+  white-space: nowrap;
+}
+.nav-wallet-btn:hover { box-shadow: 0 0 32px rgba(168,85,247,0.6); transform: translateY(-1px); }
+.nav-wallet-btn.connected {
+  background: linear-gradient(135deg, #1a0a3a, #0d1a30);
+  border: 1px solid var(--kii-neon);
+  font-size: 0.7rem;
+}
+.hamburger { display: none; background: none; border: none; cursor: pointer; color: var(--kii-glow); font-size: 1.5rem; }
+
+/* ─── SECTIONS WRAPPER ─── */
+section { position: relative; z-index: 1; }
+
+/* ─── HERO ─── */
+#hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 7rem 2rem 4rem;
+  overflow: hidden;
+}
+.hero-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(124,58,237,0.12);
+  border: 1px solid rgba(168,85,247,0.3);
+  border-radius: 100px;
+  padding: 0.35rem 1rem;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--kii-glow);
+  letter-spacing: 0.1em;
+  margin-bottom: 1.5rem;
+}
+.hero-badge .dot {
+  width: 7px; height: 7px;
+  background: var(--kii-neon);
+  border-radius: 50%;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%,100% { opacity:1; box-shadow: 0 0 6px var(--kii-neon); }
+  50% { opacity:0.4; box-shadow: none; }
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 4.5vw, 4rem);
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.01em;
+}
+.hero-title .line1 { color: var(--kii-white); display: block; }
+.hero-title .line2 {
+  display: block;
+  background: linear-gradient(90deg, var(--kii-violet), var(--kii-neon), var(--kii-glow));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer-text 4s linear infinite;
+  background-size: 200%;
+}
+@keyframes shimmer-text {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.hero-title .line3 { color: var(--kii-white); display: block; }
+.hero-desc {
+  color: rgba(200,180,255,0.65);
+  font-size: 1.05rem;
+  line-height: 1.75;
+  margin-bottom: 2rem;
+  max-width: 480px;
+}
+.hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+.btn-primary {
+  background: linear-gradient(135deg, var(--kii-purple), var(--kii-neon));
+  border: none;
+  color: white;
+  padding: 0.85rem 2rem;
+  border-radius: 12px;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 0 24px rgba(168,85,247,0.4);
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-primary:hover { box-shadow: 0 0 40px rgba(168,85,247,0.7); transform: translateY(-2px); }
+.btn-secondary {
+  background: transparent;
+  border: 1px solid rgba(168,85,247,0.35);
+  color: var(--kii-glow);
+  padding: 0.85rem 2rem;
+  border-radius: 12px;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-secondary:hover { background: var(--glass); border-color: var(--kii-neon); box-shadow: 0 0 20px rgba(168,85,247,0.2); }
+.hero-stats {
+  display: flex;
+  gap: 2rem;
+  margin-top: 2.5rem;
+  flex-wrap: wrap;
+}
+.stat-item { display: flex; flex-direction: column; gap: 0.2rem; }
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--kii-neon);
+}
+.stat-label { font-size: 0.72rem; color: var(--kii-muted); letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* HERO POSTER */
+.hero-visual {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hero-poster-container {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+}
+.hero-poster-glow {
+  position: absolute;
+  inset: -30px;
+  background: radial-gradient(ellipse at center, rgba(168,85,247,0.25) 0%, transparent 70%);
+  pointer-events: none;
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+@keyframes glow-pulse {
+  0%,100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+.hero-poster {
+  width: 100%;
+  border-radius: 20px;
+  border: 1px solid rgba(168,85,247,0.3);
+  box-shadow:
+    0 0 40px rgba(124,58,237,0.3),
+    0 0 80px rgba(168,85,247,0.15),
+    inset 0 0 30px rgba(124,58,237,0.05);
+  display: block;
+  animation: float-card 6s ease-in-out infinite;
+}
+@keyframes float-card {
+  0%,100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-8px) rotate(0.3deg); }
+  66% { transform: translateY(-4px) rotate(-0.3deg); }
+}
+.hero-poster-placeholder {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 20px;
+  border: 1px solid rgba(168,85,247,0.3);
+  background: linear-gradient(135deg, #0d0526, #1a0a3a, #0a1535);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  animation: float-card 6s ease-in-out infinite;
+  box-shadow: 0 0 60px rgba(124,58,237,0.2), 0 0 100px rgba(168,85,247,0.1);
+}
+.poster-mock-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--kii-white);
+}
+.poster-mock-sub {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--kii-neon);
+  letter-spacing: 0.1em;
+}
+.poster-code-block {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(168,85,247,0.2);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: #a0f0a0;
+  line-height: 1.8;
+  width: 85%;
+  margin-top: 0.5rem;
+}
+.poster-code-block .kw { color: var(--kii-violet); }
+.poster-code-block .fn { color: var(--kii-glow); }
+.poster-coin {
+  position: absolute;
+  top: -20px;
+  right: 20px;
+  width: 70px; height: 70px;
+  background: linear-gradient(135deg, #b45309, #f59e0b, #fcd34d, #f59e0b);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 900;
+  color: #7c2d12;
+  box-shadow: 0 0 20px rgba(245,158,11,0.5), inset 0 2px 4px rgba(255,255,255,0.3);
+  animation: coin-spin 8s linear infinite;
+  border: 3px solid rgba(255,215,0,0.4);
+}
+@keyframes coin-spin {
+  0%,100% { transform: rotateY(0deg) translateY(-20px); }
+  50% { transform: rotateY(180deg) translateY(-25px); }
+}
+.floating-tags {
+  position: absolute;
+  bottom: -15px;
+  left: -15px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.float-tag {
+  background: rgba(5,3,15,0.85);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+  border-radius: 10px;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--kii-glow);
+  animation: float-tag 4s ease-in-out infinite;
+}
+.float-tag:nth-child(2) { animation-delay: 1s; margin-left: 1.5rem; }
+@keyframes float-tag {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* ─── GLASS CARD ─── */
+.glass-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: all 0.35s;
+}
+.glass-card:hover {
+  border-color: rgba(168,85,247,0.35);
+  background: var(--glass-hover);
+  box-shadow: 0 0 30px rgba(124,58,237,0.1);
+}
+
+/* ─── NETWORK BANNER ─── */
+#network-banner {
+  display: none;
+  background: linear-gradient(90deg, rgba(239,68,68,0.15), rgba(239,68,68,0.08));
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  margin: 0 auto 1.5rem;
+  max-width: 1100px;
+  display: none;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: #fca5a5;
+}
+#network-banner.visible { display: flex; }
+#network-banner button {
+  background: rgba(239,68,68,0.2);
+  border: 1px solid rgba(239,68,68,0.4);
+  color: #fca5a5;
+  padding: 0.4rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+#network-banner button:hover { background: rgba(239,68,68,0.3); }
+
+/* ─── SECTION HEADER ─── */
+.section-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+.section-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--kii-neon);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 0.85rem;
+  opacity: 0.8;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  font-weight: 800;
+  color: var(--kii-white);
+  line-height: 1.15;
+}
+.section-title span {
+  background: linear-gradient(90deg, var(--kii-violet), var(--kii-glow));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.section-desc {
+  color: rgba(200,180,255,0.55);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  max-width: 550px;
+  margin: 1rem auto 0;
+}
+
+/* ─── DASHBOARD SECTION ─── */
+#dashboard {
+  padding: 6rem 2rem;
+}
+.dashboard-inner { max-width: 1100px; margin: 0 auto; }
+
+/* WALLET CONNECT PANEL */
+.wallet-panel {
+  padding: 1.75rem 2rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.wallet-status-group { display: flex; flex-direction: column; gap: 0.4rem; }
+.wallet-label { font-size: 0.72rem; color: var(--kii-muted); letter-spacing: 0.1em; text-transform: uppercase; font-family: var(--font-mono); }
+.wallet-address-display {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--kii-glow);
+}
+.wallet-address-display.not-connected { color: rgba(168,139,250,0.4); font-style: italic; }
+.network-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(34,211,238,0.1);
+  border: 1px solid rgba(34,211,238,0.25);
+  border-radius: 100px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  color: var(--kii-cyan);
+  letter-spacing: 0.06em;
+}
+.network-badge.wrong { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: #fca5a5; }
+.network-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--kii-cyan); }
+.network-badge.wrong .network-dot { background: #f87171; animation: none; }
+.wallet-right { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.connect-btn {
+  background: linear-gradient(135deg, var(--kii-purple), var(--kii-neon));
+  border: none;
+  color: white;
+  padding: 0.75rem 1.75rem;
+  border-radius: 12px;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 0 20px rgba(168,85,247,0.35);
+}
+.connect-btn:hover { box-shadow: 0 0 35px rgba(168,85,247,0.6); transform: translateY(-2px); }
+.connect-btn.connected { background: linear-gradient(135deg, #1a0a3a, #0a1535); border: 1px solid rgba(168,85,247,0.4); }
+
+/* BALANCE GRID */
+.balance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+.balance-card {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  position: relative;
+  overflow: hidden;
+}
+.balance-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--kii-neon), transparent);
+  opacity: 0.5;
+}
+.balance-card.deposit::before { background: linear-gradient(90deg, transparent, var(--kii-violet), transparent); }
+.balance-card.loan::before { background: linear-gradient(90deg, transparent, #f59e0b, transparent); }
+.balance-card.contract::before { background: linear-gradient(90deg, transparent, var(--kii-cyan), transparent); }
+.balance-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+.deposit .balance-icon { background: rgba(124,58,237,0.2); }
+.loan .balance-icon { background: rgba(245,158,11,0.15); }
+.contract .balance-icon { background: rgba(34,211,238,0.12); }
+.kii-wallet .balance-icon { background: rgba(168,85,247,0.15); }
+.balance-label { font-size: 0.72rem; color: var(--kii-muted); letter-spacing: 0.1em; text-transform: uppercase; font-family: var(--font-mono); }
+.balance-value {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--kii-white);
+}
+.balance-value.loading {
+  background: linear-gradient(90deg, rgba(168,85,247,0.2), rgba(168,85,247,0.4), rgba(168,85,247,0.2));
+  background-size: 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer-load 1.5s linear infinite;
+}
+@keyframes shimmer-load {
+  0% { background-position: -200%; }
+  100% { background-position: 200%; }
+}
+.balance-unit { font-size: 0.8rem; color: var(--kii-muted); margin-left: 0.25rem; }
+.balance-sub { font-size: 0.75rem; color: var(--kii-muted); font-family: var(--font-mono); word-break: break-all; }
+
+/* ─── INTERACTION PANEL ─── */
+.interaction-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+.action-card {
+  padding: 2rem;
+}
+.action-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+.action-icon-wrap {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+.deposit-icon { background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(168,85,247,0.15)); border: 1px solid rgba(168,85,247,0.2); }
+.loan-icon { background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(251,191,36,0.1)); border: 1px solid rgba(245,158,11,0.2); }
+.repay-icon { background: linear-gradient(135deg, rgba(34,211,238,0.15), rgba(6,182,212,0.08)); border: 1px solid rgba(34,211,238,0.15); }
+.action-title { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--kii-white); }
+.action-subtitle { font-size: 0.75rem; color: var(--kii-muted); margin-top: 0.15rem; }
+.form-group { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; }
+.form-label { font-size: 0.72rem; color: var(--kii-muted); letter-spacing: 0.08em; text-transform: uppercase; font-family: var(--font-mono); }
+.form-input {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(168,85,247,0.2);
+  border-radius: 10px;
+  color: var(--kii-white);
+  padding: 0.8rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.25s;
+  width: 100%;
+}
+.form-input:focus { border-color: var(--kii-neon); box-shadow: 0 0 0 3px rgba(168,85,247,0.1); }
+.form-input::placeholder { color: rgba(168,139,250,0.3); }
+.form-hint { font-size: 0.72rem; color: rgba(168,139,250,0.4); font-family: var(--font-mono); }
+.action-btn {
+  width: 100%;
+  padding: 0.9rem;
+  border-radius: 12px;
+  border: none;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+.action-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.5s;
+}
+.action-btn:hover::before { transform: translateX(100%); }
+.action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.action-btn:disabled::before { display: none; }
+.btn-deposit { background: linear-gradient(135deg, #5b21b6, #7c3aed, #8b5cf6); color: white; box-shadow: 0 4px 20px rgba(124,58,237,0.3); }
+.btn-deposit:hover:not(:disabled) { box-shadow: 0 4px 30px rgba(124,58,237,0.55); transform: translateY(-2px); }
+.btn-loan { background: linear-gradient(135deg, #92400e, #d97706, #f59e0b); color: #1c0a00; box-shadow: 0 4px 20px rgba(245,158,11,0.25); }
+.btn-loan:hover:not(:disabled) { box-shadow: 0 4px 30px rgba(245,158,11,0.45); transform: translateY(-2px); }
+.btn-repay { background: linear-gradient(135deg, #164e63, #0891b2, #22d3ee); color: #0a1f26; box-shadow: 0 4px 20px rgba(34,211,238,0.2); }
+.btn-repay:hover:not(:disabled) { box-shadow: 0 4px 30px rgba(34,211,238,0.4); transform: translateY(-2px); }
+
+/* ─── TOAST NOTIFICATIONS ─── */
+#toast-container {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 360px;
+}
+.toast {
+  background: rgba(10,5,30,0.92);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  animation: toast-in 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  border: 1px solid var(--glass-border);
+}
+.toast.success { border-color: rgba(34,197,94,0.35); }
+.toast.error { border-color: rgba(239,68,68,0.35); }
+.toast.info { border-color: rgba(168,85,247,0.35); }
+.toast.warning { border-color: rgba(245,158,11,0.3); }
+.toast-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 0.05rem; }
+.toast-body { flex: 1; }
+.toast-title { font-family: var(--font-display); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 0.2rem; }
+.toast.success .toast-title { color: #4ade80; }
+.toast.error .toast-title { color: #f87171; }
+.toast.info .toast-title { color: var(--kii-glow); }
+.toast.warning .toast-title { color: #fbbf24; }
+.toast-msg { font-size: 0.78rem; color: rgba(200,180,255,0.65); line-height: 1.5; font-family: var(--font-mono); word-break: break-all; }
+@keyframes toast-in { from { opacity:0; transform: translateX(40px) scale(0.9); } to { opacity:1; transform: translateX(0) scale(1); } }
+.toast-out { animation: toast-out 0.25s ease forwards; }
+@keyframes toast-out { to { opacity:0; transform: translateX(40px) scale(0.9); } }
+
+/* TX Loading overlay on buttons */
+.btn-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.spin { animation: spin 1s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── ABOUT SECTION ─── */
+#about {
+  padding: 6rem 2rem;
+  background: linear-gradient(180deg, transparent, rgba(124,58,237,0.04), transparent);
+}
+.about-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+.about-features { display: flex; flex-direction: column; gap: 1rem; }
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 14px;
+  transition: all 0.3s;
+}
+.feature-item:hover { background: var(--glass); border: 1px solid var(--glass-border); }
+.feature-icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 0.1rem; }
+.feature-title { font-family: var(--font-display); font-size: 0.9rem; font-weight: 600; color: var(--kii-white); margin-bottom: 0.3rem; }
+.feature-desc { font-size: 0.82rem; color: rgba(200,180,255,0.55); line-height: 1.6; }
+.about-text-content { display: flex; flex-direction: column; gap: 1.5rem; }
+.about-text-content p { color: rgba(200,180,255,0.6); line-height: 1.8; font-size: 0.95rem; }
+.week-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(124,58,237,0.15);
+  border: 1px solid rgba(168,85,247,0.25);
+  border-radius: 10px;
+  padding: 0.5rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--kii-neon);
+}
+.tech-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.tech-tag {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(168,85,247,0.2);
+  border-radius: 6px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--kii-muted);
+}
+
+/* ─── CONTRACT INFO SECTION ─── */
+#contract-info {
+  padding: 2rem 2rem 4rem;
+}
+.contract-inner { max-width: 1100px; margin: 0 auto; }
+.contract-card { padding: 2rem; }
+.contract-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+.contract-field { display: flex; flex-direction: column; gap: 0.4rem; }
+.cf-label { font-size: 0.7rem; color: var(--kii-muted); letter-spacing: 0.1em; text-transform: uppercase; font-family: var(--font-mono); }
+.cf-value {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--kii-glow);
+  word-break: break-all;
+  padding: 0.6rem 0.85rem;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(168,85,247,0.15);
+  border-radius: 8px;
+}
+.cf-value a { color: inherit; text-decoration: none; }
+.cf-value a:hover { color: var(--kii-neon); }
+
+/* ─── LINKS SECTION ─── */
+#links {
+  padding: 4rem 2rem;
+}
+.links-inner { max-width: 1100px; margin: 0 auto; }
+.links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.25rem;
+}
+.link-card {
+  padding: 1.75rem;
+  text-align: center;
+  cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.3s;
+}
+.link-card:hover { transform: translateY(-4px); }
+.link-icon {
+  width: 50px; height: 50px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  margin-bottom: 0.25rem;
+}
+.link-card:nth-child(1) .link-icon { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); }
+.link-card:nth-child(2) .link-icon { background: rgba(124,58,237,0.15); border: 1px solid rgba(168,85,247,0.2); }
+.link-card:nth-child(3) .link-icon { background: rgba(34,211,238,0.1); border: 1px solid rgba(34,211,238,0.2); }
+.link-card:nth-child(4) .link-icon { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.2); }
+.link-title { font-family: var(--font-display); font-size: 0.88rem; font-weight: 700; color: var(--kii-white); }
+.link-desc { font-size: 0.75rem; color: var(--kii-muted); }
+
+/* ─── FOOTER ─── */
+footer {
+  border-top: 1px solid var(--glass-border);
+  padding: 2.5rem 2rem;
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+.footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.footer-brand {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  color: var(--kii-muted);
+}
+.footer-brand span { color: var(--kii-neon); }
+.footer-center { font-size: 0.78rem; color: rgba(168,139,250,0.35); font-family: var(--font-mono); }
+.footer-right { font-size: 0.75rem; color: rgba(168,139,250,0.3); }
+
+/* ─── TX HISTORY ─── */
+.tx-history { margin-top: 2rem; }
+.tx-history-title { font-family: var(--font-display); font-size: 0.88rem; font-weight: 600; color: var(--kii-glow); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+.tx-list { display: flex; flex-direction: column; gap: 0.6rem; max-height: 260px; overflow-y: auto; }
+.tx-list::-webkit-scrollbar { width: 4px; }
+.tx-list::-webkit-scrollbar-track { background: transparent; }
+.tx-list::-webkit-scrollbar-thumb { background: rgba(168,85,247,0.3); border-radius: 4px; }
+.tx-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: rgba(0,0,0,0.3);
+  border-radius: 10px;
+  border: 1px solid rgba(168,85,247,0.1);
+  font-size: 0.77rem;
+  gap: 0.75rem;
+}
+.tx-type { font-family: var(--font-display); font-size: 0.72rem; font-weight: 600; color: var(--kii-glow); flex-shrink: 0; }
+.tx-hash { font-family: var(--font-mono); color: rgba(168,139,250,0.5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; font-size: 0.72rem; }
+.tx-hash a { color: inherit; text-decoration: none; }
+.tx-hash a:hover { color: var(--kii-neon); }
+.tx-status { flex-shrink: 0; font-size: 0.68rem; font-family: var(--font-mono); padding: 0.2rem 0.55rem; border-radius: 6px; }
+.tx-status.ok { background: rgba(34,197,94,0.12); color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
+.tx-status.pending { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 900px) {
+  .hero-inner { grid-template-columns: 1fr; gap: 2.5rem; }
+  .about-inner { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+  .hamburger { display: block; }
+}
+@media (max-width: 600px) {
+  .wallet-panel { flex-direction: column; align-items: flex-start; }
+  .footer-inner { flex-direction: column; text-align: center; }
+  .interaction-grid { grid-template-columns: 1fr; }
+  nav { padding: 0.85rem 1.25rem; }
+}
+
+/* ─── FADE IN ANIMATIONS ─── */
+.fade-up {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s cubic-bezier(0.2,0.8,0.2,1), transform 0.7s cubic-bezier(0.2,0.8,0.2,1);
+}
+.fade-up.visible { opacity: 1; transform: translateY(0); }
+.fade-up.delay-1 { transition-delay: 0.1s; }
+.fade-up.delay-2 { transition-delay: 0.2s; }
+.fade-up.delay-3 { transition-delay: 0.3s; }
+.fade-up.delay-4 { transition-delay: 0.4s; }
+
+/* ─── GLOW ORBS ─── */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+}
+.orb-1 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%);
+  top: -100px; right: -100px;
+  animation: orb-float 12s ease-in-out infinite;
+}
+.orb-2 {
+  width: 350px; height: 350px;
+  background: radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 70%);
+  bottom: 0; left: -80px;
+  animation: orb-float 9s ease-in-out infinite reverse;
+}
+@keyframes orb-float {
+  0%,100% { transform: translate(0,0); }
+  33% { transform: translate(20px,-20px); }
+  66% { transform: translate(-15px,15px); }
+}
+</style>
+</head>
+<body>
+
+<canvas id="particle-canvas"></canvas>
+
+<!-- NAV -->
+<nav id="navbar">
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-icon">K</div>
+    <div class="nav-logo-text">Kii<span>Chain</span></div>
+  </a>
+  <div class="nav-links">
+    <a href="#dashboard">Dashboard</a>
+    <a href="#about">About</a>
+    <a href="#links">Explorer</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:1rem;">
+    <div id="nav-network-badge" class="network-badge" style="display:none;">
+      <div class="network-dot" style="animation:pulse-dot 2s ease-in-out infinite;"></div>
+      KiiChain Testnet Oro
+    </div>
+    <button class="nav-wallet-btn" id="nav-connect-btn" onclick="connectWallet()">Connect Wallet</button>
+    <button class="hamburger" onclick="toggleMenu()">☰</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="hero-inner">
+    <div class="hero-content">
+      <div class="hero-badge fade-up visible"><div class="dot"></div> WEEK 2 · KIICHAIN BUILDER SERIES</div>
+      <h1 class="hero-title fade-up delay-1 visible">
+        <span class="line1">Micro</span>
+        <span class="line2">Lending</span>
+        <span class="line3">Protocol</span>
+      </h1>
+      <p class="hero-desc fade-up delay-2 visible">
+        A beginner-friendly decentralized lending smart contract built on KiiChain Testnet Oro.
+        Deposit KII, request loans, and repay onchain — fully transparent, fully permissionless.
+      </p>
+      <div class="hero-actions fade-up delay-3 visible">
+        <a href="#dashboard" class="btn-primary">Launch App</a>
+        <a href="https://github.com/Kbin1992/kiichain-weekly-contracts" target="_blank" class="btn-secondary">View GitHub</a>
+      </div>
+      <div class="hero-stats fade-up delay-4 visible">
+        <div class="stat-item">
+          <div class="stat-value">1336</div>
+          <div class="stat-label">Chain ID</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">KII</div>
+          <div class="stat-label">Currency</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">0x3c0B</div>
+          <div class="stat-label">Contract</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">Live</div>
+          <div class="stat-label">Status</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-visual fade-up delay-2 visible">
+      <div class="hero-poster-container">
+        <div class="hero-poster-glow"></div>
+        <div class="hero-poster-placeholder" id="hero-poster">
+          <div style="text-align:center;padding:1.5rem;">
+            <div style="font-family:var(--font-display);font-size:0.72rem;color:var(--kii-neon);letter-spacing:.18em;margin-bottom:.75rem;">WEEK 2 · KIICHAIN BUILDER SERIES</div>
+            <div class="poster-mock-title">Building a<br><span style="background:linear-gradient(90deg,var(--kii-violet),var(--kii-glow));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Micro Lending</span><br>Smart Contract</div>
+            <div style="font-family:var(--font-display);font-size:.7rem;color:var(--kii-muted);margin-top:.4rem;letter-spacing:.08em;">on KiiChain</div>
+            <div class="poster-code-block">
+              <span class="kw">contract</span> <span class="fn">MicroLending</span> {<br>
+              &nbsp;&nbsp;<span class="kw">mapping</span>(address =&gt; uint256)<br>
+              &nbsp;&nbsp;<span class="kw">public</span> deposits;<br>
+              &nbsp;&nbsp;<span class="kw">function</span> <span class="fn">deposit</span>() <span class="kw">public payable</span> {<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;...<br>
+              &nbsp;&nbsp;}<br>
+              }
+            </div>
+            <div style="display:flex;justify-content:center;gap:1.5rem;margin-top:1rem;">
+              <div style="text-align:center;font-size:.65rem;color:var(--kii-muted);"><div style="font-size:1.2rem;">⬇️</div>Deposit KII</div>
+              <div style="text-align:center;font-size:.65rem;color:var(--kii-muted);"><div style="font-size:1.2rem;">🤝</div>Request Loan</div>
+              <div style="text-align:center;font-size:.65rem;color:var(--kii-muted);"><div style="font-size:1.2rem;">🔄</div>Repay Loan</div>
+              <div style="text-align:center;font-size:.65rem;color:var(--kii-muted);"><div style="font-size:1.2rem;">📊</div>Track</div>
+            </div>
+          </div>
+        </div>
+        <div class="poster-coin">K<br>ORO</div>
+        <div class="floating-tags">
+          <div class="float-tag">⛓ KiiChain Testnet Oro</div>
+          <div class="float-tag">🔐 Onchain · Permissionless</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DASHBOARD SECTION -->
+<section id="dashboard">
+  <div class="dashboard-inner">
+    <div class="section-header fade-up">
+      <div class="section-tag">// dapp dashboard</div>
+      <h2 class="section-title">Lending <span>Dashboard</span></h2>
+      <p class="section-desc">Connect your wallet to interact with the live MicroLending contract on KiiChain Testnet Oro.</p>
+    </div>
+
+    <!-- Network Banner -->
+    <div id="network-banner">
+      <span>⚠️ Wrong network detected. Please switch to KiiChain Testnet Oro (Chain ID: 1336).</span>
+      <button onclick="switchNetwork()">Switch Network</button>
+    </div>
+
+    <!-- Wallet Panel -->
+    <div class="glass-card wallet-panel fade-up">
+      <div class="wallet-status-group">
+        <div class="wallet-label">Connected Wallet</div>
+        <div class="wallet-address-display not-connected" id="wallet-addr-display">Not connected</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+        <div>
+          <div class="wallet-label" style="margin-bottom:.3rem;">Network</div>
+          <div class="network-badge" id="network-badge-main">
+            <div class="network-dot" style="background:rgba(168,139,250,0.4);"></div>
+            Not connected
+          </div>
+        </div>
+        <div class="wallet-right">
+          <button class="connect-btn" id="main-connect-btn" onclick="connectWallet()">
+            🦊 Connect MetaMask
+          </button>
+          <button class="connect-btn connected" id="refresh-btn" style="display:none;" onclick="loadBalances()">
+            🔄 Refresh
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Balances -->
+    <div class="balance-grid">
+      <div class="glass-card balance-card deposit fade-up delay-1">
+        <div class="balance-icon">💜</div>
+        <div class="balance-label">My Deposit Balance</div>
+        <div class="balance-value" id="deposit-balance">—<span class="balance-unit">KII</span></div>
+        <div class="balance-sub">Amount deposited to contract</div>
+      </div>
+      <div class="glass-card balance-card loan fade-up delay-2">
+        <div class="balance-icon">🏦</div>
+        <div class="balance-label">Active Loan</div>
+        <div class="balance-value" id="loan-balance">—<span class="balance-unit">KII</span></div>
+        <div class="balance-sub">Outstanding loan amount</div>
+      </div>
+      <div class="glass-card balance-card kii-wallet fade-up delay-3">
+        <div class="balance-icon">👛</div>
+        <div class="balance-label">Wallet KII Balance</div>
+        <div class="balance-value" id="kii-balance">—<span class="balance-unit">KII</span></div>
+        <div class="balance-sub">Native token in your wallet</div>
+      </div>
+      <div class="glass-card balance-card contract fade-up delay-4">
+        <div class="balance-icon">📋</div>
+        <div class="balance-label">Contract Address</div>
+        <div class="balance-value" style="font-size:0.72rem;padding-top:0.15rem;" id="contract-addr-display">
+          <a href="https://testnet.explorer.kiichain.io/address/0x3c0Bfc4f12703074dD013bE7555F9fC49cA462F7" target="_blank">
+            0x3c0B...A462F7
+          </a>
+        </div>
+        <div class="balance-sub">KiiChain Testnet Oro</div>
+      </div>
+    </div>
+
+    <!-- Interaction Panels -->
+    <div class="interaction-grid">
+      <!-- Deposit -->
+      <div class="glass-card action-card fade-up delay-1">
+        <div class="action-header">
+          <div class="action-icon-wrap deposit-icon">⬇️</div>
+          <div>
+            <div class="action-title">Deposit KII</div>
+            <div class="action-subtitle">Add funds to earn lending capacity</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="deposit-amount">Amount (KII)</label>
+          <input type="number" id="deposit-amount" class="form-input" placeholder="0.0" min="0" step="0.01"/>
+          <div class="form-hint">Enter the amount of KII to deposit into the contract</div>
+        </div>
+        <button class="action-btn btn-deposit" id="deposit-btn" onclick="depositKII()" disabled>
+          ⬇ Deposit KII
+        </button>
+      </div>
+
+      <!-- Request Loan -->
+      <div class="glass-card action-card fade-up delay-2">
+        <div class="action-header">
+          <div class="action-icon-wrap loan-icon">🤝</div>
+          <div>
+            <div class="action-title">Request Loan</div>
+            <div class="action-subtitle">Borrow KII from the protocol</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loan-amount">Loan Amount (KII)</label>
+          <input type="number" id="loan-amount" class="form-input" placeholder="0.0" min="0" step="0.01"/>
+          <div class="form-hint">Amount must be available in protocol liquidity</div>
+        </div>
+        <button class="action-btn btn-loan" id="loan-btn" onclick="requestLoan()" disabled>
+          🤝 Request Loan
+        </button>
+      </div>
+
+      <!-- Repay Loan -->
+      <div class="glass-card action-card fade-up delay-3">
+        <div class="action-header">
+          <div class="action-icon-wrap repay-icon">🔄</div>
+          <div>
+            <div class="action-title">Repay Loan</div>
+            <div class="action-subtitle">Clear your outstanding balance</div>
+          </div>
+        </div>
+        <div style="flex:1;">
+          <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(34,211,238,0.15);border-radius:10px;padding:1rem;margin-bottom:1.25rem;">
+            <div class="form-label" style="margin-bottom:.5rem;">Current Loan Outstanding</div>
+            <div style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:#22d3ee;" id="repay-amount-display">— KII</div>
+            <div class="form-hint" style="margin-top:.35rem;">This amount will be sent to repay your loan</div>
+          </div>
+        </div>
+        <button class="action-btn btn-repay" id="repay-btn" onclick="repayLoan()" disabled>
+          🔄 Repay Full Loan
+        </button>
+      </div>
+    </div>
+
+    <!-- TX History -->
+    <div class="glass-card" style="padding:1.75rem 2rem;" id="tx-history-card">
+      <div class="tx-history-title">📜 Transaction History <span style="font-size:0.75rem;color:var(--kii-muted);font-weight:400;">(this session)</span></div>
+      <div class="tx-list" id="tx-list">
+        <div style="font-size:0.8rem;color:rgba(168,139,250,0.35);font-family:var(--font-mono);padding:0.5rem;">No transactions yet in this session</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT SECTION -->
+<section id="about">
+  <div class="about-inner" style="max-width:1100px;margin:0 auto;padding:0 0 2rem;">
+    <div class="about-text-content fade-up">
+      <div>
+        <div class="week-badge">📅 WEEK 2 · KIICHAIN BUILDER SERIES</div>
+      </div>
+      <h2 class="section-title" style="text-align:left;">About This <span>Project</span></h2>
+      <p>
+        This is a Week 2 KiiChain builder project exploring decentralized lending mechanics and PayFi infrastructure. The MicroLending smart contract demonstrates how permissionless finance can work at a protocol level — anyone can deposit collateral, request loans, and repay without intermediaries.
+      </p>
+      <p>
+        Built on KiiChain Testnet Oro, this project showcases the capabilities of the KiiChain ecosystem for real-world financial use cases. KiiChain is purpose-built for PayFi — bridging traditional finance and decentralized infrastructure.
+      </p>
+      <div class="tech-tags">
+        <div class="tech-tag">Solidity</div>
+        <div class="tech-tag">ethers.js</div>
+        <div class="tech-tag">MetaMask</div>
+        <div class="tech-tag">KiiChain</div>
+        <div class="tech-tag">EVM Compatible</div>
+        <div class="tech-tag">Testnet Oro</div>
+        <div class="tech-tag">PayFi</div>
+      </div>
+    </div>
+    <div class="about-features fade-up delay-2">
+      <div class="feature-item">
+        <div class="feature-icon">💜</div>
+        <div>
+          <div class="feature-title">Deposit KII</div>
+          <div class="feature-desc">Deposit native KII tokens directly to the smart contract, building up your onchain balance for collateral.</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🤝</div>
+        <div>
+          <div class="feature-title">Request Loan</div>
+          <div class="feature-desc">Request a loan from available protocol liquidity. All loan data is stored transparently onchain.</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🔄</div>
+        <div>
+          <div class="feature-title">Repay Loan</div>
+          <div class="feature-desc">Repay your active loan in full by sending the exact loan amount back to the smart contract.</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">📊</div>
+        <div>
+          <div class="feature-title">Live Onchain Data</div>
+          <div class="feature-desc">All balances and loan data are read directly from the blockchain in real-time with every wallet connection.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTRACT INFO -->
+<section id="contract-info">
+  <div class="contract-inner">
+    <div class="glass-card contract-card fade-up">
+      <div class="section-tag">// smart contract details</div>
+      <h3 class="section-title" style="font-size:1.6rem;margin-top:.5rem;">Contract <span>Reference</span></h3>
+      <div class="contract-grid">
+        <div class="contract-field">
+          <div class="cf-label">Contract Address</div>
+          <div class="cf-value"><a href="https://testnet.explorer.kiichain.io/address/0x3c0Bfc4f12703074dD013bE7555F9fC49cA462F7" target="_blank">0x3c0Bfc4f12703074dDD013bE7555F9fC49cA462F7</a></div>
+        </div>
+        <div class="contract-field">
+          <div class="cf-label">Network</div>
+          <div class="cf-value">KiiChain Testnet Oro</div>
+        </div>
+        <div class="contract-field">
+          <div class="cf-label">Chain ID</div>
+          <div class="cf-value">1336</div>
+        </div>
+        <div class="contract-field">
+          <div class="cf-label">Currency</div>
+          <div class="cf-value">KII (Native)</div>
+        </div>
+        <div class="contract-field">
+          <div class="cf-label">RPC Endpoint</div>
+          <div class="cf-value" style="font-size:0.72rem;">https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com/</div>
+        </div>
+        <div class="contract-field">
+          <div class="cf-label">Block Explorer</div>
+          <div class="cf-value"><a href="https://testnet.explorer.kiichain.io/" target="_blank">testnet.explorer.kiichain.io</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LINKS SECTION -->
+<section id="links">
+  <div class="links-inner">
+    <div class="section-header fade-up">
+      <div class="section-tag">// resources</div>
+      <h2 class="section-title">Explore <span>KiiChain</span></h2>
+    </div>
+    <div class="links-grid">
+      <a class="glass-card link-card fade-up delay-1" href="https://github.com/Kbin1992/kiichain-weekly-contracts" target="_blank">
+        <div class="link-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+        </div>
+        <div class="link-title">GitHub Repo</div>
+        <div class="link-desc">View contract source code &amp; weekly builds</div>
+      </a>
+      <a class="glass-card link-card fade-up delay-2" href="https://kiichain.io" target="_blank">
+        <div class="link-icon">🔗</div>
+        <div class="link-title">KiiChain</div>
+        <div class="link-desc">Explore the PayFi blockchain ecosystem</div>
+      </a>
+      <a class="glass-card link-card fade-up delay-3" href="https://testnet.explorer.kiichain.io/" target="_blank">
+        <div class="link-icon">🔍</div>
+        <div class="link-title">Block Explorer</div>
+        <div class="link-desc">View transactions on KiiChain Testnet Oro</div>
+      </a>
+      <a class="glass-card link-card fade-up delay-4" href="https://explorer.kiichain.io/faucet" target="_blank">
+        <div class="link-icon">🚰</div>
+        <div class="link-title">KII Faucet</div>
+        <div class="link-desc">Get free KII tokens for testnet testing</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">Built by <span>Kbin</span> · KiiChain Micro Lending</div>
+    <div class="footer-center">Week 2 · KiiChain Builder Series</div>
+    <div class="footer-right">KiiChain Testnet Oro · Chain ID 1336</div>
+  </div>
+</footer>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────
+const CONTRACT_ADDRESS = "0x3c0Bfc4f12703074dD013bE7555F9fC49cA462F7";
+const EXPLORER_URL = "https://testnet.explorer.kiichain.io";
+const CHAIN_ID = 1336;
+const CHAIN_ID_HEX = "0x538";
+const RPC_URL = "https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com/";
+
+const CONTRACT_ABI = [
+  {
+    "inputs": [],
+    "name": "deposit",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "amount", "type": "uint256" }],
+    "name": "requestLoan",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "repayLoan",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "user", "type": "address" }],
+    "name": "getDeposit",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "user", "type": "address" }],
+    "name": "getLoan",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
+
+// ─── STATE ───────────────────────────────────────────────────────────
+let provider = null;
+let signer = null;
+let contract = null;
+let userAddress = null;
+let txHistory = [];
+let currentLoanAmount = null;
+
+// ─── CONNECT WALLET ───────────────────────────────────────────────────
+async function connectWallet() {
+  if (typeof window.ethereum === 'undefined') {
+    showToast('error', 'MetaMask Required', 'Please install MetaMask to use this dApp.');
+    return;
+  }
+  try {
+    showToast('info', 'Connecting...', 'Requesting wallet access from MetaMask.');
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    userAddress = accounts[0];
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    signer = provider.getSigner();
+    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+    const network = await provider.getNetwork();
+    if (network.chainId !== CHAIN_ID) {
+      showNetworkBanner(true);
+      updateWalletUI(userAddress, false);
+      showToast('warning', 'Wrong Network', `Please switch to KiiChain Testnet Oro (Chain ID: ${CHAIN_ID}).`);
+      await switchNetwork();
+      return;
+    }
+
+    showNetworkBanner(false);
+    updateWalletUI(userAddress, true);
+    enableButtons(true);
+    await loadBalances();
+    showToast('success', 'Wallet Connected!', `${truncateAddr(userAddress)}`);
+
+    // Listen for network and account changes
+    window.ethereum.on('chainChanged', handleChainChanged);
+    window.ethereum.on('accountsChanged', handleAccountsChanged);
+  } catch (err) {
+    console.error(err);
+    showToast('error', 'Connection Failed', err.message || 'Could not connect to MetaMask.');
+  }
+}
+
+async function switchNetwork() {
+  try {
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: CHAIN_ID_HEX }]
+    });
+  } catch (switchError) {
+    if (switchError.code === 4902) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: CHAIN_ID_HEX,
+            chainName: 'KiiChain Testnet Oro',
+            nativeCurrency: { name: 'KII', symbol: 'KII', decimals: 18 },
+            rpcUrls: [RPC_URL],
+            blockExplorerUrls: [EXPLORER_URL]
+          }]
+        });
+        showToast('success', 'Network Added!', 'KiiChain Testnet Oro added to MetaMask.');
+        setTimeout(() => connectWallet(), 1000);
+      } catch (addError) {
+        showToast('error', 'Network Add Failed', addError.message);
+      }
+    } else {
+      showToast('error', 'Switch Failed', switchError.message);
+    }
+  }
+}
+
+function handleChainChanged(chainIdHex) {
+  const chainId = parseInt(chainIdHex, 16);
+  if (chainId !== CHAIN_ID) {
+    showNetworkBanner(true);
+    enableButtons(false);
+    updateNetworkBadge(false);
+    showToast('warning', 'Wrong Network', 'Please switch back to KiiChain Testnet Oro.');
+  } else {
+    showNetworkBanner(false);
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    signer = provider.getSigner();
+    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+    enableButtons(true);
+    updateNetworkBadge(true);
+    loadBalances();
+    showToast('success', 'Network Switched', 'Connected to KiiChain Testnet Oro.');
+  }
+}
+
+function handleAccountsChanged(accounts) {
+  if (accounts.length === 0) {
+    disconnectWallet();
+  } else {
+    userAddress = accounts[0];
+    updateWalletUI(userAddress, true);
+    loadBalances();
+    showToast('info', 'Account Changed', `Switched to ${truncateAddr(userAddress)}`);
+  }
+}
+
+function disconnectWallet() {
+  userAddress = null;
+  provider = null;
+  signer = null;
+  contract = null;
+  updateWalletUI(null, false);
+  enableButtons(false);
+  resetBalances();
+  showToast('info', 'Disconnected', 'Wallet has been disconnected.');
+}
+
+// ─── LOAD BALANCES ───────────────────────────────────────────────────
+async function loadBalances() {
+  if (!contract || !userAddress) return;
+
+  setBalanceLoading(true);
+  try {
+    const [depositRaw, loanRaw, kiiRaw] = await Promise.all([
+      contract.getDeposit(userAddress),
+      contract.getLoan(userAddress),
+      provider.getBalance(userAddress)
+    ]);
+
+    const deposit = parseFloat(ethers.utils.formatEther(depositRaw));
+    const loan = parseFloat(ethers.utils.formatEther(loanRaw));
+    const kii = parseFloat(ethers.utils.formatEther(kiiRaw));
+
+    document.getElementById('deposit-balance').innerHTML = `${deposit.toFixed(4)}<span class="balance-unit">KII</span>`;
+    document.getElementById('loan-balance').innerHTML = `${loan.toFixed(4)}<span class="balance-unit">KII</span>`;
+    document.getElementById('kii-balance').innerHTML = `${kii.toFixed(4)}<span class="balance-unit">KII</span>`;
+
+    currentLoanAmount = loanRaw;
+    const loanDisplay = loan > 0 ? `${loan.toFixed(4)} KII` : 'No active loan';
+    document.getElementById('repay-amount-display').textContent = loanDisplay;
+
+  } catch (err) {
+    console.error('Balance load error:', err);
+    showToast('error', 'Balance Error', 'Could not load onchain balances.');
+  }
+  setBalanceLoading(false);
+}
+
+function setBalanceLoading(loading) {
+  if (loading) {
+    ['deposit-balance','loan-balance','kii-balance'].forEach(id => {
+      document.getElementById(id).innerHTML = '<span class="loading">Loading...</span>';
+    });
+  }
+}
+
+function resetBalances() {
+  ['deposit-balance','loan-balance','kii-balance'].forEach(id => {
+    document.getElementById(id).innerHTML = '—<span class="balance-unit">KII</span>';
+  });
+  document.getElementById('repay-amount-display').textContent = '— KII';
+}
+
+// ─── DEPOSIT ───────────────────────────────────────────────────────
+async function depositKII() {
+  if (!contract) { showToast('error', 'Not Connected', 'Connect your wallet first.'); return; }
+  const amount = document.getElementById('deposit-amount').value;
+  if (!amount || parseFloat(amount) <= 0) {
+    showToast('warning', 'Invalid Amount', 'Please enter a valid deposit amount.');
+    return;
+  }
+  const btn = document.getElementById('deposit-btn');
+  setButtonLoading(btn, true, '⬇ Deposit KII');
+  try {
+    const valueWei = ethers.utils.parseEther(amount);
+    showToast('info', 'Confirming...', 'Confirm the transaction in MetaMask.');
+    const tx = await contract.deposit({ value: valueWei });
+    addTxHistory('DEPOSIT', tx.hash, 'pending');
+    showToast('info', 'Transaction Sent', `TX: ${truncateHash(tx.hash)}`);
+    await tx.wait();
+    updateTxStatus(tx.hash, 'ok');
+    showToast('success', 'Deposit Successful!', `${amount} KII deposited to contract.`);
+    document.getElementById('deposit-amount').value = '';
+    await loadBalances();
+  } catch (err) {
+    console.error(err);
+    showToast('error', 'Deposit Failed', err.reason || err.message || 'Transaction rejected.');
+  }
+  setButtonLoading(btn, false, '⬇ Deposit KII');
+}
+
+// ─── REQUEST LOAN ────────────────────────────────────────────────
+async function requestLoan() {
+  if (!contract) { showToast('error', 'Not Connected', 'Connect your wallet first.'); return; }
+  const amount = document.getElementById('loan-amount').value;
+  if (!amount || parseFloat(amount) <= 0) {
+    showToast('warning', 'Invalid Amount', 'Please enter a valid loan amount.');
+    return;
+  }
+  const btn = document.getElementById('loan-btn');
+  setButtonLoading(btn, true, '🤝 Request Loan');
+  try {
+    const amountWei = ethers.utils.parseEther(amount);
+    showToast('info', 'Confirming...', 'Confirm the transaction in MetaMask.');
+    const tx = await contract.requestLoan(amountWei);
+    addTxHistory('LOAN REQ', tx.hash, 'pending');
+    showToast('info', 'Transaction Sent', `TX: ${truncateHash(tx.hash)}`);
+    await tx.wait();
+    updateTxStatus(tx.hash, 'ok');
+    showToast('success', 'Loan Requested!', `${amount} KII loan initiated.`);
+    document.getElementById('loan-amount').value = '';
+    await loadBalances();
+  } catch (err) {
+    console.error(err);
+    showToast('error', 'Loan Failed', err.reason || err.message || 'Transaction rejected.');
+  }
+  setButtonLoading(btn, false, '🤝 Request Loan');
+}
+
+// ─── REPAY LOAN ──────────────────────────────────────────────────
+async function repayLoan() {
+  if (!contract) { showToast('error', 'Not Connected', 'Connect your wallet first.'); return; }
+  if (!currentLoanAmount || currentLoanAmount.isZero()) {
+    showToast('warning', 'No Active Loan', 'You have no active loan to repay.');
+    return;
+  }
+  const btn = document.getElementById('repay-btn');
+  setButtonLoading(btn, true, '🔄 Repay Loan');
+  try {
+    showToast('info', 'Confirming...', 'Confirm the transaction in MetaMask.');
+    const tx = await contract.repayLoan({ value: currentLoanAmount });
+    addTxHistory('REPAY', tx.hash, 'pending');
+    showToast('info', 'Transaction Sent', `TX: ${truncateHash(tx.hash)}`);
+    await tx.wait();
+    updateTxStatus(tx.hash, 'ok');
+    showToast('success', 'Loan Repaid!', 'Your loan has been fully repaid.');
+    await loadBalances();
+  } catch (err) {
+    console.error(err);
+    showToast('error', 'Repay Failed', err.reason || err.message || 'Transaction rejected.');
+  }
+  setButtonLoading(btn, false, '🔄 Repay Loan');
+}
+
+// ─── UI HELPERS ──────────────────────────────────────────────────
+function updateWalletUI(address, connected) {
+  const addrDisplay = document.getElementById('wallet-addr-display');
+  const mainBtn = document.getElementById('main-connect-btn');
+  const navBtn = document.getElementById('nav-connect-btn');
+  const refreshBtn = document.getElementById('refresh-btn');
+  const navBadge = document.getElementById('nav-network-badge');
+
+  if (connected && address) {
+    addrDisplay.textContent = address;
+    addrDisplay.classList.remove('not-connected');
+    mainBtn.textContent = '✓ ' + truncateAddr(address);
+    mainBtn.classList.add('connected');
+    navBtn.textContent = truncateAddr(address);
+    navBtn.classList.add('connected');
+    refreshBtn.style.display = 'block';
+    navBadge.style.display = 'inline-flex';
+  } else {
+    addrDisplay.textContent = 'Not connected';
+    addrDisplay.classList.add('not-connected');
+    mainBtn.textContent = '🦊 Connect MetaMask';
+    mainBtn.classList.remove('connected');
+    navBtn.textContent = 'Connect Wallet';
+    navBtn.classList.remove('connected');
+    refreshBtn.style.display = 'none';
+    navBadge.style.display = 'none';
+  }
+  updateNetworkBadge(connected);
+}
+
+function updateNetworkBadge(connected) {
+  const badge = document.getElementById('network-badge-main');
+  if (connected) {
+    badge.innerHTML = `<div class="network-dot" style="animation:pulse-dot 2s ease-in-out infinite;background:var(--kii-cyan);"></div> KiiChain Testnet Oro`;
+    badge.classList.remove('wrong');
+  } else {
+    badge.innerHTML = `<div class="network-dot" style="background:rgba(168,139,250,0.4);"></div> Not connected`;
+  }
+}
+
+function showNetworkBanner(show) {
+  const banner = document.getElementById('network-banner');
+  if (show) banner.classList.add('visible');
+  else banner.classList.remove('visible');
+}
+
+function enableButtons(enabled) {
+  ['deposit-btn','loan-btn','repay-btn'].forEach(id => {
+    document.getElementById(id).disabled = !enabled;
+  });
+}
+
+function setButtonLoading(btn, loading, originalText) {
+  btn.disabled = loading;
+  if (loading) {
+    btn.innerHTML = `<span class="spin">⟳</span> Processing...`;
+  } else {
+    btn.textContent = originalText;
+  }
+}
+
+function truncateAddr(addr) {
+  if (!addr) return '';
+  return addr.slice(0,6) + '...' + addr.slice(-4);
+}
+function truncateHash(hash) {
+  if (!hash) return '';
+  return hash.slice(0,10) + '...' + hash.slice(-8);
+}
+
+// ─── TX HISTORY ──────────────────────────────────────────────────
+function addTxHistory(type, hash, status) {
+  txHistory.unshift({ type, hash, status });
+  renderTxHistory();
+}
+function updateTxStatus(hash, status) {
+  const tx = txHistory.find(t => t.hash === hash);
+  if (tx) { tx.status = status; renderTxHistory(); }
+}
+function renderTxHistory() {
+  const list = document.getElementById('tx-list');
+  if (txHistory.length === 0) {
+    list.innerHTML = '<div style="font-size:0.8rem;color:rgba(168,139,250,0.35);font-family:var(--font-mono);padding:0.5rem;">No transactions yet in this session</div>';
+    return;
+  }
+  list.innerHTML = txHistory.map(tx => `
+    <div class="tx-item">
+      <div class="tx-type">${tx.type}</div>
+      <div class="tx-hash"><a href="${EXPLORER_URL}/tx/${tx.hash}" target="_blank">${truncateHash(tx.hash)}</a></div>
+      <div class="tx-status ${tx.status}">${tx.status === 'ok' ? '✓ Confirmed' : '⟳ Pending'}</div>
+    </div>
+  `).join('');
+}
+
+// ─── TOAST ──────────────────────────────────────────────────────
+function showToast(type, title, msg) {
+  const container = document.getElementById('toast-container');
+  const icons = { success: '✅', error: '❌', info: '💜', warning: '⚠️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `
+    <div class="toast-icon">${icons[type]}</div>
+    <div class="toast-body">
+      <div class="toast-title">${title}</div>
+      <div class="toast-msg">${msg}</div>
+    </div>
+  `;
+  container.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('toast-out');
+    setTimeout(() => el.remove(), 300);
+  }, 4500);
+}
+
+// ─── MOBILE MENU ────────────────────────────────────────────────
+function toggleMenu() {
+  const links = document.querySelector('.nav-links');
+  links.style.display = links.style.display === 'flex' ? 'none' : 'flex';
+  links.style.position = 'fixed';
+  links.style.top = '60px';
+  links.style.left = '0';
+  links.style.right = '0';
+  links.style.background = 'rgba(5,3,15,0.97)';
+  links.style.padding = '1.5rem 2rem';
+  links.style.flexDirection = 'column';
+  links.style.gap = '1.5rem';
+  links.style.borderBottom = '1px solid rgba(168,85,247,0.2)';
+  links.style.backdropFilter = 'blur(20px)';
+  links.style.zIndex = '99';
+}
+
+// ─── SCROLL ANIMATIONS ──────────────────────────────────────────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-up:not(.visible)').forEach(el => observer.observe(el));
+
+// ─── PARTICLES ──────────────────────────────────────────────────
+const canvas = document.getElementById('particle-canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+let animFrame;
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = document.body.scrollHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+class Particle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = Math.random() * canvas.width;
+    this.y = Math.random() * canvas.height;
+    this.size = Math.random() * 1.5 + 0.3;
+    this.speedX = (Math.random() - 0.5) * 0.4;
+    this.speedY = (Math.random() - 0.5) * 0.4;
+    this.opacity = Math.random() * 0.5 + 0.1;
+    this.color = Math.random() > 0.5 ? '168,85,247' : '34,211,238';
+  }
+  update() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+    if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+  }
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${this.color},${this.opacity})`;
+    ctx.fill();
+  }
+}
+
+function initParticles() {
+  particles = Array.from({ length: 80 }, () => new Particle());
+}
+
+function animateParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => { p.update(); p.draw(); });
+  // Draw connections
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 100) {
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.strokeStyle = `rgba(168,85,247,${0.08 * (1 - dist/100)})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+  }
+  animFrame = requestAnimationFrame(animateParticles);
+}
+
+initParticles();
+animateParticles();
+
+// ─── AUTO DETECT METAMASK ON LOAD ───────────────────────────────
+window.addEventListener('load', async () => {
+  if (typeof window.ethereum !== 'undefined') {
+    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+    if (accounts.length > 0) {
+      connectWallet();
+    }
+  }
+  // Also resize canvas when page fully loads
+  setTimeout(resizeCanvas, 500);
+});
+</script>
+</body>
+</html>
