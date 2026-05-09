@@ -7,7 +7,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Syne:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
-<script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js" type="application/javascript"></script>
+<script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+<script>
+  // Fallback: if unpkg fails, load from jsdelivr
+  if (typeof ethers === 'undefined') {
+    document.write('<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"><\/script>');
+  }
+</script>
 <style>
 :root {
   --kii-black: #05030f;
