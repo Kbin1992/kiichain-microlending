@@ -26,7 +26,7 @@
 
 ## 🚀 Live Demo
 
-> Deployed on Vercel — [your-site.vercel.app](#)
+> Deployed on Vercel — https://kiichain-microlending.vercel.app/
 
 ---
 
